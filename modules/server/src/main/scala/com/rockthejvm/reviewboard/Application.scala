@@ -7,6 +7,7 @@ import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.server.ziohttp.ZioHttpServerOptions
 import com.rockthejvm.reviewboard.http.controllers.HealthController
 import com.rockthejvm.reviewboard.http.HttpApi
+import com.rockthejvm.reviewboard.services.CompanyService
 
 object Application extends ZIOAppDefault {
 
@@ -21,5 +22,5 @@ object Application extends ZIOAppDefault {
     _ <- Console.printLine("Rock the JVM!")
   } yield ())
 
-  def run = serverProgram.provide(Server.default)
+  def run = serverProgram.provide(Server.default, CompanyService.dummyLayer)
 }

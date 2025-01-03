@@ -18,7 +18,7 @@ object HttpApi {
   } yield List(health, companies)
 
   // val endpointsZIO = makeControllers().map(gatherRoutes)
-  lazy val endpointsZIO: ZIO[Any, Nothing, List[ServerEndpoint[Any, Task]]] = for {
+  lazy val endpointsZIO = for {
     controllers <- makeControllers()
   } yield (gatherRoutes(controllers))
 }
