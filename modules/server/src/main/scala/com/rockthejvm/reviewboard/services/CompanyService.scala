@@ -4,6 +4,8 @@ import zio._
 import scala.collection.mutable
 import com.rockthejvm.reviewboard.domain.data._
 import com.rockthejvm.reviewboard.http.requests.CreateCompanyRequest
+import com.rockthejvm.reviewboard.repositories.CompanyRepository
+import com.rockthejvm.reviewboard.repositories.CompanyRepositoryLive
 // BUSINESS LOGIC
 // in between the HTTP layer and the DB layer
 trait CompanyService {
@@ -15,31 +17,22 @@ trait CompanyService {
   def getBySlug(slug: String): Task[Option[Company]]
 }
 
-object CompanyService {
-  val dummyLayer = ZLayer.succeed(new CompanyServiceDummy)
+class CompanyServiceLive private (repo: CompanyRepository) extends CompanyService {
+
+  override def create(req: CreateCompanyRequest): Task[Company] = repo.create(req.toCompany(-1))
+
+  override def getAll: Task[List[Company]] = repo.get
+
+  override def getById(id: Long): Task[Option[Company]] = repo.getById(id)
+
+  override def getBySlug(slug: String): Task[Option[Company]] = repo.getBySlug(slug)
+
 }
 
-class CompanyServiceDummy extends CompanyService {
-
-  val db = mutable.Map[Long, Company]()
-
-  override def create(req: CreateCompanyRequest): Task[Company] =
-    ZIO.succeed {
-      // create an id
-      val newId = db.keys.maxOption.getOrElse(0L) + 1
-      // create a slug
-      // create a company
-      val company = req.toCompany(newId)
-      // insert the company in the 'database'
-      db += (newId -> company)
-      // return that company
-      company
-    }
-
-  override def getAll: Task[List[Company]] = ZIO.succeed(db.values.toList)
-
-  override def getById(id: Long): Task[Option[Company]] = ZIO.succeed(db.get(id))
-
-  override def getBySlug(slug: String): Task[Option[Company]] =
-    ZIO.succeed(db.values.find(_.slug == slug))
+object CompanyServiceLive {
+  val layer = ZLayer {
+    for {
+      repo <- ZIO.service[CompanyRepository]
+    } yield new CompanyServiceLive(repo)
+  }
 }

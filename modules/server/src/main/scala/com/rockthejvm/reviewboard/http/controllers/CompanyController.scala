@@ -12,11 +12,6 @@ class CompanyController private (service: CompanyService)
     extends BaseController
     with CompanyEndpoints {
 
-  // TODO implementations
-  // in-memory 'database'
-
-  val db = mutable.Map[Long, Company]()
-
   // create
   val create: ServerEndpoint[Any, Task] = createEndpoint.serverLogicSuccess { req =>
     service.create(req)
