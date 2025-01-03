@@ -36,6 +36,8 @@ class JobRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends JobRepository 
 
   // step 2 - schemas for create, update...
   // This will tell Quill which case class to convert to / from PG <-> Scala
+  // note: we use inline for the macros behind quill to give us the warnings at compile time
+  // with the SQL queries that they will run. This is one of the magics of quill library implementation
   inline given schema: SchemaMeta[Job] = schemaMeta[Job]("jobs") // specifies the table name
   inline given insMeta: InsertMeta[Job] =
     insertMeta[Job](_.id) // columns to be excluded (id will be excluded)
