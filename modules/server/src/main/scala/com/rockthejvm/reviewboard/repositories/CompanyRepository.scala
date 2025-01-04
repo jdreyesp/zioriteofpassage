@@ -31,13 +31,13 @@ class CompanyRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CompanyRep
 
   override def getById(id: Long): Task[Option[Company]] =
     run {
-      query[Company].filter(_.id == lift(id)).value
-    }
+      query[Company].filter(_.id == lift(id))
+    }.map(_.headOption)
 
   override def getBySlug(slug: String): Task[Option[Company]] =
     run {
-      query[Company].filter(_.slug == lift(slug)).value
-    }
+      query[Company].filter(_.slug == lift(slug))
+    }.map(_.headOption)
 
   override def get: Task[List[Company]] =
     run(query[Company])
