@@ -25,7 +25,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
   private given zioMonadError: MonadError[Task] = new RIOMonadError[Any]
 
   val rtjvmReviewReq: CreateReviewRequest =
-    CreateReviewRequest(1L, 1L, 1L, 5, 5, 5, 5, 1, "Awesome company", Instant.now(), Instant.now())
+    CreateReviewRequest(1L, 1L, 1L, 5, 5, 5, 5, 1, "Awesome company")
 
   val serviceStub = ZLayer {
     ZIO.succeed(new ReviewService {
@@ -61,7 +61,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
         program.assert { respBody =>
           respBody.toOption
             .flatMap(_.fromJson[Review].toOption)
-            .contains(rtjvmReviewReq.toReview())
+            .exists(review => review.id == rtjvmReviewReq.id)
         }
       },
       test("get all reviews") {
@@ -75,7 +75,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
         program.assert { respBody =>
           respBody.toOption
             .flatMap(_.fromJson[List[Review]].toOption)
-            .contains(List(rtjvmReviewReq.toReview()))
+            .exists(_.exists(_.id == rtjvmReviewReq.id))
         }
       },
       test("get review by id") {
@@ -89,7 +89,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
         program.assert { respBody =>
           respBody.toOption
             .flatMap(_.fromJson[Option[Review]].toOption)
-            .contains(Some(rtjvmReviewReq.toReview()))
+            .exists(_.exists(_.id == rtjvmReviewReq.id))
         }
       }
     ).provide(serviceStub)

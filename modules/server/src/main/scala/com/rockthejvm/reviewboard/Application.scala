@@ -12,6 +12,7 @@ import com.rockthejvm.reviewboard.services.CompanyServiceLive
 import com.rockthejvm.reviewboard.repositories._
 import io.getquill.jdbczio.Quill
 import io.getquill.SnakeCase
+import com.rockthejvm.reviewboard.services.ReviewServiceLive
 
 object Application extends ZIOAppDefault {
 
@@ -30,9 +31,11 @@ object Application extends ZIOAppDefault {
     Server.default,
     // Services
     CompanyServiceLive.layer,
+    ReviewServiceLive.layer,
 
     // Repositories
     CompanyRepositoryLive.layer,
+    ReviewRepositoryLive.layer,
 
     // Other requirements
     Repository.dataLayer

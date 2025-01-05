@@ -15,9 +15,7 @@ final case class CreateReviewRequest(
     salary: Int,
     benefits: Int,
     wouldRecommend: Int,
-    review: String,
-    created: Instant = Instant.now(),
-    updated: Instant = Instant.now()
+    review: String
 ) {
   def toReview(): Review =
     Review(
@@ -30,8 +28,8 @@ final case class CreateReviewRequest(
       benefits,
       wouldRecommend,
       review,
-      created,
-      updated
+      Instant.now(),
+      Instant.now()
     )
 }
 
