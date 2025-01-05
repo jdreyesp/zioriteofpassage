@@ -3,6 +3,8 @@ package com.rockthejvm.reviewboard.http.controllers
 import zio._
 import com.rockthejvm.reviewboard.http.endpoints.HealthEndpoint
 import sttp.tapir.server.ServerEndpoint
+import sttp.tapir._
+import com.rockthejvm.reviewboard.domain.errors.HttpError
 
 // We make the constructor private because of the reason explained below
 class HealthController private extends BaseController with HealthEndpoint {
@@ -10,7 +12,12 @@ class HealthController private extends BaseController with HealthEndpoint {
   val health: ServerEndpoint[Any, Task] =
     healthEndpoint.serverLogicSuccess[Task](_ => ZIO.succeed("All good!"))
 
-  override val routes: List[ServerEndpoint[Any, Task]] = List(health)
+    // .serverLogic will return an either of error or success
+  val error: ServerEndpoint[Any, Task] =
+    errorEndpoint
+      .serverLogic[Task](_ => ZIO.fail(new RuntimeException("Boom!")).either)
+
+  override val routes: List[ServerEndpoint[Any, Task]] = List(health, error)
 }
 
 object HealthController {

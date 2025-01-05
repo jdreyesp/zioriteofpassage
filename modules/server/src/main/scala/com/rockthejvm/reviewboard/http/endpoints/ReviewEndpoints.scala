@@ -6,9 +6,9 @@ import sttp.tapir.generic.auto._
 import com.rockthejvm.reviewboard.http.requests.CreateReviewRequest
 import com.rockthejvm.reviewboard.domain.data.Review
 
-trait ReviewEndpoints {
+trait ReviewEndpoints extends BaseEndpoint {
   val createEndpoint =
-    endpoint
+    baseEndpoint
       .tag("reviews")
       .name("create")
       .description("Create a review")
@@ -18,7 +18,7 @@ trait ReviewEndpoints {
       .out(jsonBody[Review])
 
   val getAllEndpoint =
-    endpoint
+    baseEndpoint
       .tag("reviews")
       .name("getAll")
       .description("Get all reviews")
@@ -27,7 +27,7 @@ trait ReviewEndpoints {
       .out(jsonBody[List[Review]])
 
   val getByIdEndpoint =
-    endpoint
+    baseEndpoint
       .tag("reviews")
       .name("getById")
       .description("Get review by Id")

@@ -13,21 +13,22 @@ class CompanyController private (service: CompanyService)
     with CompanyEndpoints {
 
   // create
-  val create: ServerEndpoint[Any, Task] = createEndpoint.serverLogicSuccess { req =>
-    service.create(req)
+  val create: ServerEndpoint[Any, Task] = createEndpoint.serverLogic { req =>
+    service.create(req).either
   }
 
   // getAll
   val getAll: ServerEndpoint[Any, Task] =
-    getAllEndpoint.serverLogicSuccess(_ => service.getAll)
+    getAllEndpoint.serverLogic(_ => service.getAll.either)
 
   // getById
   val getById: ServerEndpoint[Any, Task] =
-    getByIdEndpoint.serverLogicSuccess { id =>
+    getByIdEndpoint.serverLogic { id =>
       ZIO
         .attempt(id.toLong)
         .flatMap(service.getById)
         .catchSome { case _: NumberFormatException => service.getBySlug(id) }
+        .either
     }
 
   override val routes: List[ServerEndpoint[Any, Task]] = List(create, getAll, getById)
