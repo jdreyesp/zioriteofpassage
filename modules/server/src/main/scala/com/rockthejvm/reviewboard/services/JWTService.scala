@@ -8,6 +8,10 @@ import java.time.Instant
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.JWTVerifier.BaseVerification
+import com.rockthejvm.reviewboard.config.JWTConfig
+import zio.config.typesafe.TypesafeConfig
+import com.typesafe.config.ConfigFactory
+import com.rockthejvm.reviewboard.config.Configs
 
 /** Explanation on how JWT works below in the Demo object
   */
@@ -16,14 +20,12 @@ trait JWTService {
   def verifyToken(token: String): Task[UserID]
 }
 
-class JWTServiceLive(clock: java.time.Clock) extends JWTService {
+class JWTServiceLive(jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTService {
 
-  private val SECRET         = "secret"       // TODO pass this from config
-  private val TTL            = 3600 * 24 * 30 // TODO pass this from config
   private val ISSUER         = "rockthejvm.com"
   private val CLAIM_USERNAME = "username"
 
-  private val algorithm = Algorithm.HMAC512(SECRET)
+  private val algorithm = Algorithm.HMAC512(jwtConfig.secret)
   private val verifier: JWTVerifier =
     JWT
       .require(algorithm)
@@ -33,7 +35,7 @@ class JWTServiceLive(clock: java.time.Clock) extends JWTService {
 
   override def createToken(user: User): Task[UserToken] = for {
     now        <- ZIO.attempt(clock.instant())
-    expiration <- ZIO.succeed(now.plusSeconds(TTL))
+    expiration <- ZIO.succeed(now.plusSeconds(jwtConfig.ttl))
     token <- ZIO.attempt(
       JWT
         .create()
@@ -58,8 +60,13 @@ class JWTServiceLive(clock: java.time.Clock) extends JWTService {
 
 object JWTServiceLive {
   val layer = ZLayer {
-    Clock.javaClock.map(clock => new JWTServiceLive(clock))
+    for {
+      jwtConfig <- ZIO.service[JWTConfig]
+      clock     <- Clock.javaClock
+    } yield new JWTServiceLive(jwtConfig, clock)
   }
+
+  val configuredLayer = Configs.makeConfigLayer[JWTConfig]("rockthejvm.jwt") >>> layer
 }
 
 object JWTServiceDemo extends App {
@@ -107,6 +114,7 @@ object JWTZIOServiceDemo extends ZIOAppDefault {
   } yield ()
 
   def run = program.provide(
-    JWTServiceLive.layer
+    JWTServiceLive.layer,
+    Configs.makeConfigLayer[JWTConfig]("rockthejvm.jwt")
   )
 }
