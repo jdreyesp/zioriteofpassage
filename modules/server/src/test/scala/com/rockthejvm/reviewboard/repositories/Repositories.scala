@@ -7,12 +7,15 @@ import zio.ZLayer
 import zio.ZIO
 
 trait Repositories {
+
+  val initScript: String
+
   // test containers (suite of libraries in the Java world (and of course it works in Scala too))
   // that allows us to spin up lightweight docker containers for tests.
   // spawn a Postgres instance on Docker just for the test
   private def createContainer() = {
     val container: PostgreSQLContainer[Nothing] =
-      PostgreSQLContainer("postgres").withInitScript("sql/companies.sql")
+      PostgreSQLContainer("postgres").withInitScript(initScript)
 
     container.start()
     container

@@ -9,6 +9,8 @@ import java.time.Instant
 
 object ReviewRepositoriesSpec extends ZIOSpecDefault with Repositories {
 
+  override val initScript: String = "sql/reviews.sql"
+
   private val rtjvmReview =
     Review(1L, -1L, -1L, 10, 10, 10, 10, 1, "Best company ever", Instant.now(), Instant.now())
 
