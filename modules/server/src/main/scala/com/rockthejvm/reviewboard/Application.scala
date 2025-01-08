@@ -13,6 +13,10 @@ import com.rockthejvm.reviewboard.repositories._
 import io.getquill.jdbczio.Quill
 import io.getquill.SnakeCase
 import com.rockthejvm.reviewboard.services.ReviewServiceLive
+import com.rockthejvm.reviewboard.services.UserServiceLive
+import com.rockthejvm.reviewboard.services.JWTServiceLive
+import com.rockthejvm.reviewboard.config.Configs
+import com.rockthejvm.reviewboard.config.JWTConfig
 
 object Application extends ZIOAppDefault {
 
@@ -29,13 +33,19 @@ object Application extends ZIOAppDefault {
 
   def run = serverProgram.provide(
     Server.default,
+    // Configs
+    Configs.makeConfigLayer[JWTConfig]("rockthejvm.jwt"),
+
     // Services
     CompanyServiceLive.layer,
     ReviewServiceLive.layer,
+    UserServiceLive.layer,
+    JWTServiceLive.layer,
 
     // Repositories
     CompanyRepositoryLive.layer,
     ReviewRepositoryLive.layer,
+    UserRepositoryLive.layer,
 
     // Other requirements
     Repository.dataLayer

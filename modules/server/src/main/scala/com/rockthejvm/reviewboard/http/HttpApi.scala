@@ -6,6 +6,7 @@ import com.rockthejvm.reviewboard.http.controllers.BaseController
 import sttp.tapir.server.ServerEndpoint
 import zio._
 import com.rockthejvm.reviewboard.http.controllers.ReviewController
+import com.rockthejvm.reviewboard.http.controllers.UserController
 
 // The sole responsibility of this object is to keep track of all controllers, so that the Application
 // does not need to know about them
@@ -17,7 +18,8 @@ object HttpApi {
     health    <- HealthController.makeZIO
     companies <- CompanyController.makeZIO
     reviews   <- ReviewController.makeZIO
-  } yield List(health, companies, reviews)
+    users     <- UserController.makeZIO
+  } yield List(health, companies, reviews, users)
 
   // val endpointsZIO = makeControllers().map(gatherRoutes)
   lazy val endpointsZIO = for {
