@@ -10,6 +10,8 @@ import com.rockthejvm.reviewboard.domain.data.UserToken
 trait UserService {
   def registerUser(email: String, password: String): Task[User]
   def verifyPassword(email: String, password: String): Task[Boolean]
+  def updatePassword(email: String, oldPassword: String, newPassword: String): Task[User]
+  def deleteUser(email: String, password: String): Task[User]
   // JWT (access token used in the authentication bearer header in the HTTP calls)
   def generateToken(email: String, password: String): Task[Option[UserToken]]
 }
@@ -30,11 +32,40 @@ class UserServiceLive private (jwtService: JWTService, userRepo: UserRepository)
     for {
       existingUser <- userRepo
         .getByEmail(email)
-        .someOrFail(new RuntimeException(s"cannot verify user $email"))
-      result <- ZIO.attempt(
-        UserServiceLive.Hasher.validateHash(password, existingUser.hashedPassword)
-      )
+      result <- existingUser match {
+        case Some(user) =>
+          ZIO
+            .attempt(
+              UserServiceLive.Hasher.validateHash(password, user.hashedPassword)
+            )
+            .orElseSucceed(false)
+        case None => ZIO.succeed(false)
+      }
     } yield result
+
+  override def updatePassword(email: String, oldPassword: String, newPassword: String): Task[User] =
+    for {
+      user <- userRepo
+        .getByEmail(email)
+        .someOrFail(new RuntimeException(s"User with email $email not found"))
+      verified <- ZIO.attempt(UserServiceLive.Hasher.validateHash(oldPassword, user.hashedPassword))
+      updatedUser <- userRepo
+        .update(user.id, _.copy(hashedPassword = UserServiceLive.Hasher.generateHash(newPassword)))
+        .when(verified)
+        .someOrFail(new RuntimeException(s"Could not update user with email: $email"))
+    } yield updatedUser
+
+  override def deleteUser(email: String, password: String): Task[User] =
+    for {
+      user <- userRepo
+        .getByEmail(email)
+        .someOrFail(new RuntimeException(s"User with email $email not found!"))
+      verified <- ZIO.attempt(UserServiceLive.Hasher.validateHash(password, user.hashedPassword))
+      deletedUser <- userRepo
+        .delete(user.id)
+        .when(verified)
+        .someOrFail(new RuntimeException(s"Could not delete user with email: ${user.email}"))
+    } yield deletedUser
 
   override def generateToken(email: String, password: String): Task[Option[UserToken]] =
     for {
