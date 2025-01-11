@@ -19,6 +19,11 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3._
 
 import java.time.Instant
+import com.rockthejvm.reviewboard.services.JWTService
+import com.rockthejvm.reviewboard.domain.data.User
+import com.rockthejvm.reviewboard.domain.data.UserToken
+import com.rockthejvm.reviewboard.domain.data.UserID
+import sttp.model.Header
 
 object ReviewControllerSpec extends ZIOSpecDefault {
 
@@ -27,14 +32,19 @@ object ReviewControllerSpec extends ZIOSpecDefault {
   val rtjvmReviewReq: CreateReviewRequest =
     CreateReviewRequest(1L, 1L, 1L, 5, 5, 5, 5, 1, "Awesome company")
 
-  val serviceStub = ZLayer {
-    ZIO.succeed(new ReviewService {
+  private val serviceStub = new ReviewService {
 
-      override def create(req: CreateReviewRequest): Task[Review] = ZIO.succeed(req.toReview())
-      override def getAll: Task[List[Review]] = ZIO.succeed(List(rtjvmReviewReq.toReview()))
-      override def getById(id: Long): Task[Option[Review]] =
-        ZIO.succeed(Some(rtjvmReviewReq.toReview()))
-    })
+    override def create(req: CreateReviewRequest): Task[Review] = ZIO.succeed(req.toReview())
+    override def getAll: Task[List[Review]] = ZIO.succeed(List(rtjvmReviewReq.toReview()))
+    override def getById(id: Long): Task[Option[Review]] =
+      ZIO.succeed(Some(rtjvmReviewReq.toReview()))
+  }
+
+  private val jwtServiceStub = new JWTService {
+    override def createToken(user: User): Task[UserToken] =
+      ZIO.succeed(UserToken(user.email, "ALL_IS_GOOD", 99999999L))
+    override def verifyToken(token: String): Task[UserID] =
+      ZIO.succeed(UserID(1, "daniel@rockthejvm.com"))
   }
 
   private def backendStubZIO(endpointFun: ReviewController => ServerEndpoint[Any, Task]) =
@@ -54,6 +64,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
           backendStub <- backendStubZIO(_.create)
           response <- basicRequest
             .post(uri"/reviews")
+            .headers(Header.authorization("Bearer", "ALL_IS_GOOD"))
             .body(rtjvmReviewReq.toJson)
             .send(backendStub)
         } yield response.body
@@ -92,5 +103,5 @@ object ReviewControllerSpec extends ZIOSpecDefault {
             .exists(_.exists(_.id == rtjvmReviewReq.id))
         }
       }
-    ).provide(serviceStub)
+    ).provide(ZLayer.succeed(serviceStub), ZLayer.succeed(jwtServiceStub))
 }

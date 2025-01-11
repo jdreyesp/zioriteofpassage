@@ -9,7 +9,7 @@ import com.rockthejvm.reviewboard.domain.data.Company
 
 trait CompanyEndpoints extends BaseEndpoint {
   val createEndpoint =
-    baseEndpoint
+    secureBaseEndpoint
       .tag("companies")
       .name("create")
       .description("Create a listing for a company")

@@ -7,15 +7,19 @@ import com.rockthejvm.reviewboard.domain.data.Company
 import sttp.tapir.server.ServerEndpoint
 import scala.util.Try
 import com.rockthejvm.reviewboard.services.CompanyService
+import com.rockthejvm.reviewboard.domain.data.UserID
+import com.rockthejvm.reviewboard.services.JWTService
 
-class CompanyController private (service: CompanyService)
+class CompanyController private (service: CompanyService, jwtService: JWTService)
     extends BaseController
     with CompanyEndpoints {
 
   // create
-  val create: ServerEndpoint[Any, Task] = createEndpoint.serverLogic { req =>
-    service.create(req).either
-  }
+  val create: ServerEndpoint[Any, Task] = createEndpoint
+    .serverSecurityLogic[UserID, Task](token => jwtService.verifyToken(token).either)
+    .serverLogic { userId => req =>
+      service.create(req).either
+    }
 
   // getAll
   val getAll: ServerEndpoint[Any, Task] =
@@ -37,6 +41,7 @@ class CompanyController private (service: CompanyService)
 
 object CompanyController {
   val makeZIO = for {
-    service <- ZIO.service[CompanyService]
-  } yield new CompanyController(service)
+    companyService <- ZIO.service[CompanyService]
+    jwtService     <- ZIO.service[JWTService]
+  } yield new CompanyController(companyService, jwtService)
 }

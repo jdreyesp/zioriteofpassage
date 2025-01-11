@@ -25,7 +25,6 @@ trait UserEndpoints extends BaseEndpoint {
       .in(jsonBody[RegisterUserAccount])
       .out(jsonBody[UserResponse])
 
-  // TODO - should be an authorized endpoint (JWT)
   val updatePasswordEndpoint =
     secureBaseEndpoint
       .tag("Users")
