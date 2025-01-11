@@ -10,6 +10,8 @@ import com.rockthejvm.reviewboard.http.requests.UpdatePasswordRequest
 import com.rockthejvm.reviewboard.http.requests.DeleteAccountRequest
 import com.rockthejvm.reviewboard.domain.data.UserToken
 import com.rockthejvm.reviewboard.http.requests.LoginRequest
+import com.rockthejvm.reviewboard.http.requests.ForgotPasswordRequest
+import com.rockthejvm.reviewboard.http.requests.RecoverPasswordRequest
 
 trait UserEndpoints extends BaseEndpoint {
 
@@ -52,4 +54,22 @@ trait UserEndpoints extends BaseEndpoint {
       .post
       .in(jsonBody[LoginRequest])
       .out(jsonBody[UserToken])
+
+  val forgotPasswordEndpoint =
+    baseEndpoint
+      .tag("Users")
+      .name("forgot password")
+      .description("Trigger email for password recovery")
+      .in("users" / "forgot")
+      .post
+      .in(jsonBody[ForgotPasswordRequest])
+
+  val recoverPasswordEndpoint =
+    baseEndpoint
+      .tag("Users")
+      .name("recover password")
+      .description("Set new password based on OTP")
+      .in("users" / "recover")
+      .post
+      .in(jsonBody[RecoverPasswordRequest])
 }

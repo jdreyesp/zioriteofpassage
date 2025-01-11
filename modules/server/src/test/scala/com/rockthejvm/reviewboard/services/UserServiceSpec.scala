@@ -11,6 +11,7 @@ import zio.test._
 import com.rockthejvm.reviewboard.domain.data.User
 import com.rockthejvm.reviewboard.domain.data.UserToken
 import com.rockthejvm.reviewboard.domain.data.UserID
+import com.rockthejvm.reviewboard.repositories.RecoveryTokensRepository
 
 object UserServiceSpec extends ZIOSpecDefault {
 
@@ -54,6 +55,27 @@ object UserServiceSpec extends ZIOSpecDefault {
         ZIO.succeed(UserToken(user.email, "BIG ACCESS", Long.MaxValue))
       override def verifyToken(token: String): Task[UserID] =
         ZIO.succeed(UserID(user.id, user.email))
+    }
+  }
+
+  val stubEmailLayer = ZLayer.succeed {
+    new EmailService {
+      override def sendPasswordRecoveryEmail(to: String, token: String): Task[Unit]    = ZIO.unit
+      override def sendEmail(to: String, subject: String, content: String): Task[Unit] = ZIO.unit
+    }
+  }
+
+  val stubTokenRepoLayer = ZLayer.succeed {
+    new RecoveryTokensRepository {
+      val db = collection.mutable.Map[String, String]()
+      override def checkToken(email: String, token: String): Task[Boolean] =
+        ZIO.succeed(db.get(email).filter(_ == token).nonEmpty)
+      override def getToken(email: String): Task[Option[String]] =
+        ZIO.attempt {
+          val token = util.Random.alphanumeric.take(8).mkString.toUpperCase()
+          db += (email -> token)
+          Some(token)
+        }
     }
   }
   override def spec: Spec[TestEnvironment & Scope, Any] =
@@ -112,6 +134,8 @@ object UserServiceSpec extends ZIOSpecDefault {
     ).provide(
       UserServiceLive.layer,
       stubJWTLayer,
-      stubRepoLayer
+      stubRepoLayer,
+      stubEmailLayer,
+      stubTokenRepoLayer
     )
 }
