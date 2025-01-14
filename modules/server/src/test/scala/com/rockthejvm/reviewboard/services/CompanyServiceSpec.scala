@@ -108,7 +108,7 @@ object CompanyServiceSpec extends ZIOSpecDefault {
         program.assert {
           case (company, company2, companies) =>
             companies == List(company, company2)
-          case _ => false
+          case null => false
         }
       }
     ).provide(CompanyServiceLive.layer, stubRepoLayer)

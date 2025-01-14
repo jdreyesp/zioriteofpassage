@@ -167,3 +167,8 @@ project/plugins/project/
 .vscode
 project/project
 src/main/resources
+
+#node
+node_modules/
+.parcel-cache
+dist/
