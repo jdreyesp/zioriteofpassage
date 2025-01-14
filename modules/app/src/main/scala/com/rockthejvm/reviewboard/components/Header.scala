@@ -7,6 +7,11 @@ import org.scalajs.dom
 import scala.scalajs.js.annotation._
 import scala.scalajs._
 
+import com.rockthejvm.reviewboard.components.Anchors
+
+import com.rockthejvm.reviewboard.common.Constants._
+import com.rockthejvm.reviewboard.common.Constants
+
 object Header {
   def apply() = div(
     cls := "container-fluid p-0",
@@ -44,18 +49,13 @@ object Header {
     )
   )
 
-  // This is for converting the image link to JS
-  @js.native
-  @JSImport("/static/img/fiery-lava 128x128.png", JSImport.Default)
-  private val logoImage: String = js.native
-
   private def renderLogo() =
     a(
       href := "/",
       cls  := "navbar-brand",
       img(
         cls := "home-logo",
-        src := logoImage,
+        src := Constants.logoImage,
         alt := "Rock the JVM"
       )
     )
@@ -73,13 +73,5 @@ object Header {
       cls := "nav-item",
       Anchors.renderNavLink(text, location, "nav-link jvm-item")
     )
-}
 
-object Anchors {
-  def renderNavLink(text: String, location: String, cssClass: String = "") =
-    a(
-      href := location,
-      cls  := cssClass,
-      text
-    )
 }
