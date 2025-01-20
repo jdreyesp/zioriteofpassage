@@ -10,7 +10,6 @@ import scala.scalajs._
 import com.rockthejvm.reviewboard.components.Anchors
 
 import com.rockthejvm.reviewboard.common.Constants._
-import com.rockthejvm.reviewboard.common.Constants
 
 object Header {
   def apply() = div(
@@ -55,7 +54,7 @@ object Header {
       cls  := "navbar-brand",
       img(
         cls := "home-logo",
-        src := Constants.logoImage,
+        src := logoImage,
         alt := "Rock the JVM"
       )
     )

@@ -18,6 +18,7 @@ import com.rockthejvm.reviewboard.services.JWTServiceLive
 import com.rockthejvm.reviewboard.config.Configs
 import com.rockthejvm.reviewboard.config.JWTConfig
 import com.rockthejvm.reviewboard.services.EmailServiceLive
+import sttp.tapir.server.interceptor.cors.CORSInterceptor
 
 object Application extends ZIOAppDefault {
 
@@ -26,7 +27,9 @@ object Application extends ZIOAppDefault {
     _         <- Console.printLine(s"Loaded endpoints: $endpoints")
     _ <- Server.serve(
       ZioHttpInterpreter(
-        ZioHttpServerOptions.default // can add configs e.g. CORS
+        ZioHttpServerOptions.default.appendInterceptor(
+          CORSInterceptor.default
+        )
       ).toHttp(endpoints)
     )
     _ <- Console.printLine("Rock the JVM!")

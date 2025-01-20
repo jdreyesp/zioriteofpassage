@@ -5,6 +5,11 @@ import org.scalajs.dom
 import com.rockthejvm.reviewboard.components.Anchors
 import com.rockthejvm.reviewboard.domain.data.Company
 import com.rockthejvm.reviewboard.common.Constants.companyLogoPlaceholder
+import com.rockthejvm.reviewboard.http.endpoints.CompanyEndpoints
+import sttp.client3._
+import sttp.client3.impl.zio.FetchZioBackend
+import sttp.tapir.client.sttp.SttpClientInterpreter
+import zio._
 
 object CompaniesPage {
 
@@ -20,8 +25,32 @@ object CompaniesPage {
     List("space", "scala")
   )
 
+  val companiesBus = EventBus[List[Company]]()
+
+  def performBackendCall(): Unit = {
+    // fetch API or
+    // AJAX or
+    // ZIO endpoints <-- we're doing this
+    val companyEndpoints = new CompanyEndpoints {}
+    val theEndpoint      = companyEndpoints.getAllEndpoint
+    // localhost:8080
+    val backend                            = FetchZioBackend()
+    val interpreter: SttpClientInterpreter = SttpClientInterpreter()
+    val request = interpreter
+      .toRequestThrowDecodeFailures(theEndpoint, Some(uri"http://localhost:8080"))
+      .apply(())
+    val companiesZIO = backend.send(request).map(_.body).absolve
+    // run the ZIO effect manually (this is not a ZIO application, that's why)
+    Unsafe.unsafe { implicit unsafe =>
+      zio.Runtime.default.unsafe.fork(
+        companiesZIO.tap(list => ZIO.attempt(companiesBus.emit(list)))
+      )
+    }
+  }
+
   def apply() =
     sectionTag(
+      onMountCallback(_ => performBackendCall()),
       cls := "section-1",
       div(
         cls := "container company-list-hero",
@@ -40,8 +69,7 @@ object CompaniesPage {
           ),
           div(
             cls := "col-lg-8",
-            renderCompany(dummyCompany),
-            renderCompany(dummyCompany)
+            children <-- companiesBus.events.map(_.map(renderCompany))
           )
         )
       )

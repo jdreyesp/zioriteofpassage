@@ -1,5 +1,5 @@
 ThisBuild / version      := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "3.5.2"
+ThisBuild / scalaVersion := "3.4.3"
 ThisBuild / scalacOptions ++= Seq(
   "-unchecked",
   "-deprecation",
@@ -55,8 +55,9 @@ lazy val foundations = (project in file("modules/foundations"))
   .settings(
     libraryDependencies ++= serverDependencies
   )
+  .dependsOn(common.jvm)
 
-lazy val common = crossProject(JVMPlatform, JSPlatform)
+lazy val common = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/common"))
   .settings(
@@ -81,7 +82,7 @@ lazy val app = (project in file("modules/app"))
       "com.softwaremill.sttp.tapir"   %%% "tapir-json-zio"    % tapirVersion,
       "com.softwaremill.sttp.client3" %%% "zio"               % sttpVersion,
       "dev.zio"                       %%% "zio-json"          % "0.4.2",
-      "io.frontroute"                 %%% "frontroute"        % "0.18.1" // Brings in Laminar 16
+      "io.frontroute"                 %%% "frontroute"        % "0.19.0" // Brings in Laminar 16
     ),
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
     semanticdbEnabled               := true,
