@@ -6,46 +6,23 @@ import com.rockthejvm.reviewboard.components.Anchors
 import com.rockthejvm.reviewboard.domain.data.Company
 import com.rockthejvm.reviewboard.common.Constants.companyLogoPlaceholder
 import com.rockthejvm.reviewboard.http.endpoints.CompanyEndpoints
+import sttp.capabilities._
 import sttp.client3._
-import sttp.client3.impl.zio.FetchZioBackend
 import sttp.tapir.client.sttp.SttpClientInterpreter
-import zio._
+import sttp.tapir.Endpoint
+import sttp.model.Uri
+import _root_.zio._
+import _root_.zio.Unsafe
+import com.rockthejvm.reviewboard.core.ZJS
 
 object CompaniesPage {
-
-  val dummyCompany = Company(
-    1L,
-    "dummy-company",
-    "Simple company",
-    "http://dummy.com",
-    Some("Anywhere"),
-    Some("On Mars"),
-    Some("space travel"),
-    None,
-    List("space", "scala")
-  )
 
   val companiesBus = EventBus[List[Company]]()
 
   def performBackendCall(): Unit = {
-    // fetch API or
-    // AJAX or
-    // ZIO endpoints <-- we're doing this
-    val companyEndpoints = new CompanyEndpoints {}
-    val theEndpoint      = companyEndpoints.getAllEndpoint
-    // localhost:8080
-    val backend                            = FetchZioBackend()
-    val interpreter: SttpClientInterpreter = SttpClientInterpreter()
-    val request = interpreter
-      .toRequestThrowDecodeFailures(theEndpoint, Some(uri"http://localhost:8080"))
-      .apply(())
-    val companiesZIO = backend.send(request).map(_.body).absolve
-    // run the ZIO effect manually (this is not a ZIO application, that's why)
-    Unsafe.unsafe { implicit unsafe =>
-      zio.Runtime.default.unsafe.fork(
-        companiesZIO.tap(list => ZIO.attempt(companiesBus.emit(list)))
-      )
-    }
+    import ZJS._ // imports the extensions
+    val companiesZIO = useBackend(_.companyEndpoints.getAllEndpoint(()))
+    companiesZIO.emitTo(companiesBus)
   }
 
   def apply() =
