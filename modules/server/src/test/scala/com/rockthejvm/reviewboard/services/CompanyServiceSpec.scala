@@ -8,6 +8,7 @@ import com.rockthejvm.reviewboard.http.requests.CreateCompanyRequest
 import com.rockthejvm.reviewboard.syntax._
 import com.rockthejvm.reviewboard.repositories.CompanyRepository
 import com.rockthejvm.reviewboard.domain.data.Company
+import com.rockthejvm.reviewboard.domain.data.CompanyFilter
 object CompanyServiceSpec extends ZIOSpecDefault {
 
   // This exposes the CompanyService through the ZIO dependency system (via environment)
@@ -54,6 +55,24 @@ object CompanyServiceSpec extends ZIOSpecDefault {
 
       override def get: Task[List[Company]] =
         ZIO.succeed(db.values.toList)
+
+      override def uniqueAttributes: Task[CompanyFilter] = ZIO.succeed {
+        CompanyFilter(
+          locations = db.values.flatMap(_.location.toSet).toList,
+          countries = db.values.flatMap(_.country.toSet).toList,
+          industries = db.values.flatMap(_.industry.toSet).toList,
+          tags = db.values.flatMap(_.tags.toSet).toList
+        )
+      }
+
+      override def search(filter: CompanyFilter): Task[List[Company]] = ZIO.succeed {
+        db.values.filter { company =>
+          company.location.toSet.intersect(filter.locations.toSet).nonEmpty
+          company.country.toSet.intersect(filter.countries.toSet).nonEmpty ||
+          company.industry.toSet.intersect(filter.industries.toSet).nonEmpty ||
+          company.tags.toSet.intersect(filter.tags.toSet).nonEmpty
+        }.toList
+      }
     }
   )
   override def spec: Spec[TestEnvironment & Scope, Any] =

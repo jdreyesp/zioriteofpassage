@@ -15,9 +15,15 @@ trait CompanyService {
   def getAll: Task[List[Company]]
   def getById(id: Long): Task[Option[Company]]
   def getBySlug(slug: String): Task[Option[Company]]
+  def allFilters: Task[
+    CompanyFilter
+  ] /* Will show all possible filtering options based on our current list of companies in the DB */
+  def search(filter: CompanyFilter): Task[List[Company]]
 }
 
 class CompanyServiceLive private (repo: CompanyRepository) extends CompanyService {
+
+  override def allFilters: Task[CompanyFilter] = repo.uniqueAttributes
 
   override def create(req: CreateCompanyRequest): Task[Company] = repo.create(req.toCompany(-1))
 
@@ -27,6 +33,7 @@ class CompanyServiceLive private (repo: CompanyRepository) extends CompanyServic
 
   override def getBySlug(slug: String): Task[Option[Company]] = repo.getBySlug(slug)
 
+  override def search(filter: CompanyFilter): Task[List[Company]] = repo.search(filter)
 }
 
 object CompanyServiceLive {

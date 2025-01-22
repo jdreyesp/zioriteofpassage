@@ -8,6 +8,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.postgresql.ds.PGSimpleDataSource
 import javax.sql.DataSource
 import java.sql.SQLException
+import com.rockthejvm.reviewboard.domain.data.CompanyFilter
 
 object CompanyRepositoriesSpec extends ZIOSpecDefault with Repositories {
 
@@ -19,7 +20,16 @@ object CompanyRepositoriesSpec extends ZIOSpecDefault with Repositories {
     scala.util.Random().alphanumeric.take(8).mkString
 
   private def genCompany(): Company =
-    Company(id = -1L, slug = genString(), name = genString(), url = genString())
+    Company(
+      id = -1L,
+      slug = genString(),
+      name = genString(),
+      url = genString(),
+      location = Some(genString()),
+      country = Some(genString()),
+      industry = Some(genString()),
+      tags = (1 to 3).map(_ => genString()).toList
+    )
 
   override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("CompanyRepositorySpec")(
@@ -86,6 +96,15 @@ object CompanyRepositoriesSpec extends ZIOSpecDefault with Repositories {
 
         program.assert { case (companies, companiesFetched) =>
           companies.toSet == companiesFetched.toSet
+        }
+      },
+      test("search by tag") {
+        for {
+          repo    <- ZIO.service[CompanyRepository]
+          company <- repo.create(genCompany())
+          fetched <- repo.search(CompanyFilter(tags = company.tags.headOption.toList))
+        } yield assertTrue {
+          fetched.nonEmpty && fetched.tail.isEmpty && fetched.head == company
         }
       }
     ).provide(

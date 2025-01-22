@@ -4,6 +4,7 @@ import zio._
 import io.getquill._
 import io.getquill.jdbczio.Quill
 import com.rockthejvm.reviewboard.domain.data.Company
+import com.rockthejvm.reviewboard.domain.data.CompanyFilter
 
 trait CompanyRepository {
   def create(company: Company): Task[Company]
@@ -12,6 +13,8 @@ trait CompanyRepository {
   def getById(id: Long): Task[Option[Company]]
   def getBySlug(slug: String): Task[Option[Company]]
   def get: Task[List[Company]]
+  def uniqueAttributes: Task[CompanyFilter]
+  def search(filter: CompanyFilter): Task[List[Company]]
 }
 
 class CompanyRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CompanyRepository {
@@ -59,6 +62,42 @@ class CompanyRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CompanyRep
         .filter(_.id == lift(id))
         .delete
         .returning(r => r)
+    }
+
+  override def uniqueAttributes: Task[CompanyFilter] =
+    for {
+      locations <- run(query[Company].map(_.location).distinct).map(list =>
+        list.flatMap(o => o.toList)
+      )
+      countries <- run(query[Company].map(_.country).distinct).map(list =>
+        list.flatMap(o => o.toList)
+      )
+      industries <- run(query[Company].map(_.industry).distinct).map(list =>
+        list.flatMap(o => o.toList)
+      )
+      tags <- run(query[Company].map(_.tags))
+        .map(_.flatten.toSet.toList) // toSet is for removing duplicates
+    } yield CompanyFilter(locations, countries, industries, tags)
+
+    /*
+    select * from companies where
+      location in filter.locations OR
+      country in filter.countries OR
+      industry in filter.industries OR
+      tags in (select c1.tags from companies AS c1 where c1.id == company.id)
+     */
+  override def search(filter: CompanyFilter): Task[List[Company]] =
+    if (filter.isEmpty) get
+    else {
+      run {
+        query[Company]
+          .filter { company =>
+            liftQuery(filter.locations.toSet).contains(company.location) ||
+            liftQuery(filter.countries.toSet).contains(company.country) ||
+            liftQuery(filter.industries.toSet).contains(company.industry) ||
+            sql"${company.tags} && ${lift(filter.tags)}".asCondition // && is interpolation in sql
+          }
+      }
     }
 }
 

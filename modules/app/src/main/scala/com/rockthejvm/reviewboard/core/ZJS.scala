@@ -6,13 +6,14 @@ import sttp.tapir.client.sttp.SttpClientInterpreter
 import sttp.client3.impl.zio.FetchZioBackend
 import sttp.client3._
 import sttp.tapir.Endpoint
+import com.raquo.airstream.core.EventStream
 
 object ZJS {
 
   def useBackend =
     ZIO.serviceWithZIO[BackendClient]
 
-  extension [E <: Throwable, A](zio: ZIO[BackendClient, E, A])
+  extension [E <: Throwable, A](zio: ZIO[BackendClient, E, A]) {
     def emitTo(eventBus: EventBus[A]) =
       Unsafe.unsafe { implicit unsafe =>
         Runtime.default.unsafe.fork(
@@ -22,7 +23,19 @@ object ZJS {
         )
       }
 
-      // Endpoint[Unit, Unit, Throwable, List[Company], Any]
+    def toEventStream: EventStream[A] = {
+      val bus = EventBus[A]()
+      emitTo(bus)
+      bus.events
+    }
+
+    def runJs =
+      Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe.runToFuture(zio.provide(BackendClientLive.configuredLayer))
+      }
+  }
+
+  // Endpoint[Unit, Unit, Throwable, List[Company], Any]
   extension [I, E <: Throwable, O](endpoint: Endpoint[Unit, I, E, O, Any])
     def apply(payload: I): Task[O] =
       ZIO

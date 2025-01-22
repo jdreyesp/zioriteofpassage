@@ -6,6 +6,7 @@ import sttp.tapir.generic.auto._
 import sttp.tapir.EndpointIO.annotations.jsonbody
 import com.rockthejvm.reviewboard.http.requests.CreateCompanyRequest
 import com.rockthejvm.reviewboard.domain.data.Company
+import com.rockthejvm.reviewboard.domain.data.CompanyFilter
 
 trait CompanyEndpoints extends BaseEndpoint {
   val createEndpoint =
@@ -34,4 +35,20 @@ trait CompanyEndpoints extends BaseEndpoint {
     .in("companies" / path[String])
     .get
     .out(jsonBody[Option[Company]])
+
+  val allFiltersEndpoint = baseEndpoint
+    .name("allFilters")
+    .description("Get all possible search filters")
+    .in("companies" / "filters")
+    .get
+    .out(jsonBody[CompanyFilter])
+
+  val searchEndpoint = baseEndpoint
+    .tag("companies")
+    .name("search")
+    .description("Get companies based on filters")
+    .in("companies" / "search")
+    .post
+    .in(jsonBody[CompanyFilter])
+    .out(jsonBody[List[Company]])
 }

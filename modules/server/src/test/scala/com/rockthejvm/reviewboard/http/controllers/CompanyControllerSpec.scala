@@ -19,6 +19,7 @@ import com.rockthejvm.reviewboard.domain.data.UserToken
 import com.rockthejvm.reviewboard.services.JWTService
 import com.rockthejvm.reviewboard.domain.data.User
 import sttp.model.Header
+import com.rockthejvm.reviewboard.domain.data.CompanyFilter
 
 object CompanyControllerSpec extends ZIOSpecDefault {
 
@@ -26,6 +27,7 @@ object CompanyControllerSpec extends ZIOSpecDefault {
 
   private val rtjvm = Company(1, "rock-the-jvm", "Rock the JVM", "rockthejvm.com")
   private val serviceStub = new CompanyService {
+
     override def create(req: CreateCompanyRequest): Task[Company] = ZIO.succeed(rtjvm)
     override def getAll: Task[List[Company]]                      = ZIO.succeed(List(rtjvm))
     override def getById(id: Long): Task[Option[Company]] = ZIO.succeed {
@@ -36,6 +38,10 @@ object CompanyControllerSpec extends ZIOSpecDefault {
       if (slug == rtjvm.slug) Some(rtjvm)
       else None
     }
+
+    override def allFilters: Task[CompanyFilter] = ZIO.succeed(CompanyFilter())
+
+    override def search(filter: CompanyFilter): Task[List[Company]] = ZIO.succeed(List(rtjvm))
   }
 
   private val jwtServiceStub = new JWTService {

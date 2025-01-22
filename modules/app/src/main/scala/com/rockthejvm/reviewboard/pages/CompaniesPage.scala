@@ -14,20 +14,30 @@ import sttp.model.Uri
 import _root_.zio._
 import _root_.zio.Unsafe
 import com.rockthejvm.reviewboard.core.ZJS
+import com.rockthejvm.reviewboard.components.FilterPanel
+import com.rockthejvm.reviewboard.core.ZJS.useBackend
+import com.rockthejvm.reviewboard.core.ZJS.toEventStream
 
 object CompaniesPage {
 
-  val companiesBus = EventBus[List[Company]]()
+  val companyEvents: EventStream[List[Company]] =
+    import ZJS._
+    useBackend(_.companyEndpoints.getAllEndpoint(())).toEventStream.mergeWith {
+      FilterPanel.triggerFilters.flatMapMerge { newFilter =>
+        useBackend(_.companyEndpoints.searchEndpoint(newFilter)).toEventStream
+      }
+    }
 
-  def performBackendCall(): Unit = {
-    import ZJS._ // imports the extensions
-    val companiesZIO = useBackend(_.companyEndpoints.getAllEndpoint(()))
-    companiesZIO.emitTo(companiesBus)
-  }
+  // val companiesBus = EventBus[List[Company]]()
+
+  // def performBackendCall(): Unit = {
+  //   import ZJS._ // imports the extensions
+  //   val companiesZIO = useBackend(_.companyEndpoints.getAllEndpoint(()))
+  //   companiesZIO.emitTo(companiesBus)
+  // }
 
   def apply() =
     sectionTag(
-      onMountCallback(_ => performBackendCall()),
       cls := "section-1",
       div(
         cls := "container company-list-hero",
@@ -42,11 +52,11 @@ object CompaniesPage {
           cls := "row jvm-recent-companies-body",
           div(
             cls := "col-lg-4",
-            div("TODO filter panel here")
+            FilterPanel()
           ),
           div(
             cls := "col-lg-8",
-            children <-- companiesBus.events.map(_.map(renderCompany))
+            children <-- companyEvents.map(_.map(renderCompany))
           )
         )
       )
