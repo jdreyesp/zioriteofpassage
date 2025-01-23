@@ -10,6 +10,7 @@ import sttp.tapir.Endpoint
 import sttp.client3._
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.impl.zio.FetchZioBackend
+import com.rockthejvm.reviewboard.http.endpoints.UserEndpoints
 
 case class BackendClientConfig(uri: Option[Uri])
 trait BackendClient {
@@ -17,6 +18,7 @@ trait BackendClient {
   // AJAX or
   // ZIO endpoints <-- we're doing this
   val companyEndpoints: CompanyEndpoints
+  val userEndpoints: UserEndpoints
 
   def endpointRequest[I, E, O](
       endpoint: Endpoint[Unit, I, E, O, Any]
@@ -35,6 +37,7 @@ class BackendClientLive(
 ) extends BackendClient {
 
   override val companyEndpoints: CompanyEndpoints = new CompanyEndpoints {}
+  override val userEndpoints: UserEndpoints       = new UserEndpoints {}
   // val request = interpreter
   //   .toRequestThrowDecodeFailures(theEndpoint, Some(uri"http://localhost:8080"))
   //   .apply(())
