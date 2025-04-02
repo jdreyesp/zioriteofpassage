@@ -10,6 +10,8 @@ import scala.scalajs._
 import com.rockthejvm.reviewboard.components.Anchors
 
 import com.rockthejvm.reviewboard.common.Constants._
+import com.rockthejvm.reviewboard.core.Session
+import com.rockthejvm.reviewboard.domain.data.UserToken
 
 object Header {
   def apply() = div(
@@ -39,7 +41,7 @@ object Header {
               idAttr := "navbarNav",
               ul(
                 cls := "navbar-nav ms-auto menu align-center expanded text-center SMN_effect-3",
-                renderNavLinks()
+                children <-- Session.userState.signal.map(renderNavLinks)
               )
             )
           )
@@ -61,11 +63,28 @@ object Header {
 
   // list of <li> tags
   // Companies, Log Ing, Sign Up
-  private def renderNavLinks() = List(
-    renderNavLink("Companies", "/companies"),
-    renderNavLink("Log In", "/login"),
-    renderNavLink("Sign up", "/signup")
-  )
+  private def renderNavLinks(maybeUser: Option[UserToken]) = {
+    val constantLinks = List(
+      renderNavLink("Companies", "/companies")
+    )
+
+    val unauthedLinks = List(
+      renderNavLink("Log In", "/login"),
+      renderNavLink("Sign up", "/signup")
+    )
+
+    val authedLinks = List(
+      renderNavLink("Add company", "/post"),
+      renderNavLink("Profile", "/profile"),
+      renderNavLink("Log out", "/logout")
+    )
+
+    val customLinks =
+      if (maybeUser.nonEmpty) authedLinks
+      else unauthedLinks
+
+    constantLinks ++ customLinks
+  }
 
   private def renderNavLink(text: String, location: String) =
     li(

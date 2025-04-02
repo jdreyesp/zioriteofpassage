@@ -17,16 +17,19 @@ import com.rockthejvm.reviewboard.core.ZJS
 import com.rockthejvm.reviewboard.components.FilterPanel
 import com.rockthejvm.reviewboard.core.ZJS.useBackend
 import com.rockthejvm.reviewboard.core.ZJS.toEventStream
+import ZJS._
 
 object CompaniesPage {
 
+  val firstBatch = EventBus[List[Company]]()
+
   val companyEvents: EventStream[List[Company]] =
-    import ZJS._
-    useBackend(_.companyEndpoints.getAllEndpoint(())).toEventStream.mergeWith {
-      FilterPanel.triggerFilters.flatMapMerge { newFilter =>
-        useBackend(_.companyEndpoints.searchEndpoint(newFilter)).toEventStream
+    firstBatch.events
+      .mergeWith {
+        FilterPanel.triggerFilters.flatMapMerge { newFilter =>
+          useBackend(_.companyEndpoints.searchEndpoint(newFilter)).toEventStream
+        }
       }
-    }
 
   // val companiesBus = EventBus[List[Company]]()
 
@@ -38,6 +41,10 @@ object CompaniesPage {
 
   def apply() =
     sectionTag(
+      onMountCallback(_ =>
+        useBackend(client => client.companyEndpoints.getAllEndpoint(()))
+          .emitTo(firstBatch)
+      ),
       cls := "section-1",
       div(
         cls := "container company-list-hero",

@@ -67,7 +67,7 @@ object FilterPanel {
       onMountCallback(_ =>
         useBackend(_.companyEndpoints.allFiltersEndpoint(())).map(f => possibleFilter.set(f)).runJs
       ),
-      child.text <-- triggerFilters.map(_.toString()),
+      // child.text <-- triggerFilters.map(_.toString()),
       cls    := "accordion accordion-flush",
       idAttr := "accordionFlushExample",
       div(

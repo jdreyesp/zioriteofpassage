@@ -9,6 +9,7 @@ import com.rockthejvm.reviewboard.core.ZJS._
 import frontroute.BrowserNavigation
 import zio._
 import scala.concurrent.ExecutionContext.Implicits.global
+import com.rockthejvm.reviewboard.core.Session
 object LoginPage {
 
   case class State(
@@ -38,19 +39,18 @@ object LoginPage {
       useBackend(_.userEndpoints.loginEndpoint(LoginRequest(state.email, state.password)))
         .map { userToken =>
           // if success, set the user token, navigate away
-          // TODO set user token
+          Session.setUserState(userToken)
           stateVar.set(State())
           BrowserNavigation.replaceState("/")
         }
         .tapError { e =>
+          // if backend gave us an error, show that
           ZIO.succeed {
             stateVar.update(_.copy(showStatus = true, upstreamError = Some(e.getMessage)))
           }
         }
         .runJs
     }
-
-    // if backend gave us an error, show that
 
   }
 
@@ -73,7 +73,7 @@ object LoginPage {
         div(
           cls := "form-section",
           div(cls := "top-section", h1(span("Log In"))),
-          child.text <-- stateVar.signal.map(_.toString),
+          // child.text <-- stateVar.signal.map(_.toString),
           children <-- stateVar.signal
             .map(signal => signal.maybeError.orElse(signal.upstreamError).orElse(None))
             .map(_.map(renderError))
@@ -120,8 +120,8 @@ object LoginPage {
   private def maybeRenderSuccess(shouldShow: Boolean = false) =
     if (shouldShow)
       div(
-        cls := "page-status-success",
-        child.text <-- stateVar.signal.map(_.toString)
+        cls := "page-status-success"
+        // child.text <-- stateVar.signal.map(_.toString)
       )
     else
       div()

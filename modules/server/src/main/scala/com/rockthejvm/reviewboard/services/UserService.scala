@@ -104,7 +104,11 @@ class UserServiceLive private (
       existingUser <- userRepo.getByEmail(email).someOrFail(new RuntimeException("Non existent user"))
       tokenIsValid <- tokenRepo.checkToken(email, token)
       result <- userRepo
-                .update(existingUser.id, user => user.copy(hashedPassword = UserServiceLive.Hasher.generateHash(newPassword)))
+                .update(existingUser.id, user => user.copy(
+                  id = user.id,
+                  email = user.email,
+                  hashedPassword = UserServiceLive.Hasher.generateHash(newPassword)
+                ))
                 .when(tokenIsValid)
                 .map(_.nonEmpty)
     } yield result

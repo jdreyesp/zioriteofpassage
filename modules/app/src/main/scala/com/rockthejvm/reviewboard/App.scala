@@ -7,10 +7,12 @@ import com.raquo.airstream.ownership.OneTimeOwner
 import com.rockthejvm.reviewboard.components.Router
 import frontroute.LinkHandler
 import com.rockthejvm.reviewboard.components.Header
+import com.rockthejvm.reviewboard.core.Session
 
 object App {
 
   val app = div(
+    onMountCallback(_ => Session.loadUserState()),
     Header(),
     Router()
   ).amend(LinkHandler.bind) // for internal links
